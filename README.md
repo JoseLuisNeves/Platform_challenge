@@ -53,6 +53,10 @@ Steps 4 and 5 are calculating the reward on the go and the advantages. Steps 4 a
 
 ![image](https://user-images.githubusercontent.com/90193839/213740930-f68a7242-0f1f-43e7-994f-2e9ff300325a.png)
 
-![image](https://user-images.githubusercontent.com/90193839/213740538-9935607c-9f89-44be-bece-39a55157ffb5.png)
+Finally, step 6 corresponds to updating the actors( to which we are calculating separate clip loss functions and ratios with the same advantage), and step 7 corresponds to updating the critic. 
+
+![image](https://user-images.githubusercontent.com/90193839/213745918-403f810f-162a-4ad8-8e66-cd83359b1da1.png)
+
+We do this in the update function, which gets the neural network graphs through the evaluate function, which does not detach() its returns like the forward pass.
 
 

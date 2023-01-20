@@ -33,7 +33,26 @@ We completed step 1. Step 2 consists in initializing our training loop, and step
 
 ![image](https://user-images.githubusercontent.com/90193839/213719770-9a503791-d909-4e66-9447-1393bb7c11a8.png)
 
+I want to have a "learn" function like the models on stable baselines. The arguments of this function are the total number of steps to run, the name we want to give to the model we are training upon saving(by default, the code stores the model every time it updates and calls it model_name+nº of steps), and something called "num_envs". During my first learning attempts, I observed that the agent, upon learning how to jump over the first enemy, would have the probability of leaping so diminished that it would not have enough exploration potential to learn how to jump between platforms. To deal with this problem, part of the environments in which the agent will train will start from the end of the platform with the enemy in the beginning. This strategy greatly improved training. However, the ratio between the number of default environments and what I called "leap"(short for "leap training") environments is a hyperparameter, as is the total number of environments used. num_envs' first element gives us the number of normal environments, and the second the number of "leap" environments.
 
+![image](https://user-images.githubusercontent.com/90193839/213723863-c6180013-5daa-4f1e-aaaa-ebb9d524ed2c.png)
 
+In the image, you can see how I separate the reward from the normal environments and the ones from the "leap" environments. This is just for monitoring purposes. The rewards are mixed in the buffer because we want the update to improve the agent's performance in both environment types. We want it to learn how to leap to apply it in normal environments. However, what we want to get in the end is an agent that can start at the beginning of the first platform and achieve the end of the third, so we have to monitor that reward separately. 
+
+The image also shows how I use multiple environments. Before the episode starts, I collect the first observation of every environment to introduce it into the neural network. The outputs will come in Tensor with an element for each environment inside. Let's look at ActorsCritic forward pass to understand how we get these outputs.
+
+![image](https://user-images.githubusercontent.com/90193839/213727401-c700ca34-6bfb-40bb-b95a-3f2e97bae502.png)
+
+We first apply the ReLU activation function with the feature extraction layers we talked about before. The output of these layers will then be received by each of the heads for each distinct purpose. Entering the state value layer will output a value for each environment referent to the current state that will try to approximate predicted returns. From the "discrete" layer, it will come out a value for each possible action that softmax will transform into probabilities. With this list of probabilities(one for each possible action), we will create a probability distribution with PyTorch's Categorical, from which we will sample our chosen action. We then save the logarithm of the probability associated with that action. We then do the equivalent for the continuous head. After we apply our layer, we get a parameter value for each possible discrete action. We then take our currently stored standard deviation and these values and build a MultiVariate Gaussian distribution from which to sample.
+
+We then detach the returns of the function of their graphs. We have the evaluate function of the neural network class for use when it's time for a policy update. After getting the returns from the neural network it's time to apply them to the environments. We do a step in each environment before we move to the following step because we have to collect all the observations before we can run the neural network again. We collect it all in the buffer and separate the rewards to show with a certain frequency as we talked about.
+
+![image](https://user-images.githubusercontent.com/90193839/213736276-8f1bfa68-f9d7-41d9-a956-6510e6d9e93f.png)
+
+Steps 4 and 5 are calculating the reward on the go and the advantages. Steps 4 and 5 are calculating the reward on the go and the advantages. I perform these operations on the same function. 
+
+![image](https://user-images.githubusercontent.com/90193839/213740930-f68a7242-0f1f-43e7-994f-2e9ff300325a.png)
+
+![image](https://user-images.githubusercontent.com/90193839/213740538-9935607c-9f89-44be-bece-39a55157ffb5.png)
 
 

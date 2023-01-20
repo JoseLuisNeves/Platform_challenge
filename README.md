@@ -17,7 +17,22 @@ It means "initialize your policy neural network". Let's look at our neural netwo
 
 ![image](https://user-images.githubusercontent.com/90193839/213694890-f575e258-4eb1-457d-b2c6-4c8c9630f853.png)
 
-Our neural network starts with two feature extraction layers that will diverge into heads corresponding to each task in which we will use our neural network: outputting a discrete action, outputting a parameter value for each possible discrete action, and associating a value to the state.Our neural network starts with two feature extraction layers that will diverge into heads corresponding to each task in which we will use our neural network: outputting a discrete action, outputting a parameter value for each possible discrete action, and associating a value to the state. Above, we can see the initialization of the initial values and standard deviations of the parameters distribution.
+Our neural network starts with two feature extraction layers that will diverge into heads corresponding to each task in which we will use our neural network: outputting a discrete action, outputting a parameter value for each possible discrete action, and associating a value to the state.Our neural network starts with two feature extraction layers that will diverge into heads corresponding to each task in which we will use our neural network: outputting a discrete action, outputting a parameter value for each possible discrete action, and associating a value to the state. Above, we can see the initialization of the initial values and standard deviations of the parameters distribution. These standard deviations will be reduced throughout the training since we want our agent to become more deterministic with time. The choice of the standard deviation decay rate, initial values, and standard deviation of the parameters are hyperparameters. 
+
+Let us call ActorsCritic to initialize our policy and old policy, respectively, the policy before and after the update( we will need that for the update step to make sure we stay in the trust region). Additionally, we collect our hyperparameter values and process environment's information.
+
+![image](https://user-images.githubusercontent.com/90193839/213699186-2314fc9c-e308-44bc-8c62-53520c1b8f44.png)
+
+Let us call ActorsCritic to initialize our policy and old policy, respectively, the policy before and after the update( we will need that for the update step to make sure we stay in the trust region). Additionally, we collect our hyperparameter values and process environment information. This information will be used to initialize our neural network. The environment observation spaces are a tuple of which the first element consists of platform features+player+enemy features and the second the step number on the episode. I saw no purpose in including the steps, so the observation just includes the first part of the tuple.
+
+We can also notice the attribute "envs" and how the buffer has the length of this attribute as an argument. That's because we are training with multiple environments in parallel to accelerate and stabilize training. The buffer organizes its stored information by the environment to which it belongs.
+
+![image](https://user-images.githubusercontent.com/90193839/213717995-b4174a16-a6cc-4a48-ab75-fda1bb4c91ff.png)
+
+We completed step 1. Step 2 consists in initializing our training loop, and step 3 of collecting the agent's results upon iterating over the environment.
+
+![image](https://user-images.githubusercontent.com/90193839/213719770-9a503791-d909-4e66-9447-1393bb7c11a8.png)
+
 
 
 

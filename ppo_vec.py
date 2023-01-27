@@ -50,8 +50,8 @@ class RolloutBuffer:
 class ActorsCritic(nn.Module):
     def __init__(self, state_dim, action_dim, parameter_init, parameter_std_init): 
         super(ActorsCritic, self).__init__()
-        self.parameter_std = torch.FloatTensor(np.array(parameter_std_init))
-        self.parameter_init = torch.FloatTensor(np.array(parameter_init))
+        self.parameter_std = parameter_std_init
+        self.parameter_init = parameter_init
         self.parameters_var = self.parameter_std*self.parameter_std
         self.parameters_var = self.parameters_var
         units = 256
@@ -89,7 +89,6 @@ class ActorsCritic(nn.Module):
         cov_mat = torch.diag(self.parameters_var)
         dist_param = MultivariateNormal(self.param_means, cov_mat)
         parameter = dist_param.sample()
-        parameter = torch.abs(parameter) + self.parameter_init 
         parameter_log_prob = dist_param.log_prob(parameter)
         return action.detach(),action_log_prob.detach(), parameter.detach(), parameter_log_prob.detach(), self.state_value.detach()
     
@@ -114,7 +113,9 @@ class ActorsCritic(nn.Module):
 
         # entropy
         dist_entropy_action = dist_action.entropy() 
+        #print('discrete entropy', dist_entropy_action[0])
         dist_entropy_param = dist_param.entropy()
+        #print('continuous entropy', dist_entropy_param[0])
         
         return action_log_prob, parameter_log_prob, state_values, dist_entropy_action, dist_entropy_param
 
@@ -128,7 +129,8 @@ class Agent:
         self.gamma = gamma
         self.K_epochs = K_epochs
         self.eps_clip = eps_clip
-        self.parameter_std_init = parameter_std_init
+        self.parameter_init = torch.FloatTensor(np.array(parameter_init))
+        self.parameter_std_init = torch.FloatTensor(np.array(parameter_std_init))
         env = envs[0]
         # action space and observation space:
         #   lets split the action space into the discrete actions and continuous parameters
@@ -141,14 +143,14 @@ class Agent:
 
         self.buffer = RolloutBuffer(self.n_envs)
 
-        self.policy = ActorsCritic(self.obs_dim, self.num_actions,parameter_init,  parameter_std_init).to(device) 
+        self.policy = ActorsCritic(self.obs_dim, self.num_actions, self.parameter_init,  self.parameter_std_init).to(device) 
         # we will not include the step number in the observation because it is not useful
         # and just complicates things
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy.parameters(), 'lr': lr}
                     ])
 
-        self.policy_old = ActorsCritic(self.obs_dim, self.num_actions,parameter_init, parameter_std_init).to(device)
+        self.policy_old = ActorsCritic(self.obs_dim, self.num_actions, self.parameter_init, self.parameter_std_init).to(device)
         self.policy_old.load_state_dict(self.policy.state_dict())
         
         self.MseLoss = nn.MSELoss()
@@ -214,9 +216,10 @@ class Agent:
                     self.buffer.param_logprobs[env_idx].append(parameter_log_prob[env_idx])
                     self.buffer.state_values[env_idx].append(state_value[env_idx])
 
-                    parameter = tuple(parameters[env_idx].cpu().numpy()) 
+                    parameter = torch.abs(parameters[env_idx]) + self.parameter_init
+                    param = tuple(parameter.cpu().numpy()) 
                     action = actions[env_idx].item() 
-                    total_action = (action,parameter)
+                    total_action = (action,param)
                     # lets apply our action and parameter to the enviroment 
                     state, reward, done, _ = self.envs[env_idx].step(total_action)
                     #print('reward ', reward)

@@ -2,7 +2,7 @@ from ppo_vec import Agent
 from platform_env import PlatformEnv
 if __name__ == '__main__':
     envs = []
-    num_envs = [2,0] # [num_normal_envs,num_leap_training_envs]
+    num_envs = [1,1] # [num_normal_envs,num_leap_training_envs]
     for i in range(num_envs[0]):
         env = PlatformEnv()
         env.seed(i)

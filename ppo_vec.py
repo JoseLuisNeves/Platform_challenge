@@ -394,9 +394,10 @@ class Agent:
             state_value = state_value.squeeze()
             new_obs = []
             for env_idx in range(self.n_envs):
-                    parameter = tuple(parameters[env_idx].cpu().numpy()) 
+                    parameter = torch.abs(parameters[env_idx]) + self.parameter_init
+                    param = tuple(parameter.cpu().numpy()) 
                     action = actions[env_idx].item() 
-                    total_action = (action,parameter)
+                    total_action = (action,param)
                     # lets apply our action and parameter to the enviroment 
                     state, reward, done, _ = self.envs[env_idx].step(total_action)
                     #print('reward ', reward)
